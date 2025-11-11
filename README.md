@@ -1,63 +1,64 @@
-## Color Models App (RGB ↔ XYZ ↔ CMYK)
+## Приложение «Цветовые модели (RGB ↔ XYZ ↔ CMYK)»
 
-A Streamlit web app that lets you select and edit a color using synchronized inputs across RGB, XYZ, and CMYK. All models update automatically; out-of-gamut conversions show non-intrusive warnings.
+Веб‑приложение на Streamlit для интерактивного выбора и редактирования цвета с одновременным отображением значений в RGB, XYZ (D65, Yn=100) и CMYK. Все модели синхронизированы: изменение любой координаты автоматически пересчитывает остальные. При выходе XYZ→RGB за гамму показывается ненавязчивое предупреждение.
 
-[Документация на русском](docs/Документация.md)
+[Документация на русском (теория и инструкции)](docs/Документация.md)
 
-### Features
-- Interactive color picker, sliders, and precise numeric inputs.
-- Bidirectional conversion: RGB ↔ XYZ (D65, sRGB) and RGB ↔ CMYK.
-- Gamut clipping warnings with details on which channels were clipped.
-- Copyable HEX and decimal values.
+### Возможности
+- Точные числовые поля и плавные ползунки для RGB, XYZ, CMYK.
+- Палитра (color picker), синхронизированная с RGB/HEX.
+- Двунаправленные преобразования: RGB ↔ XYZ (sRGB, D65) и RGB ↔ CMYK (аппроксимация).
+- Предупреждение о клиппинге при XYZ→RGB.
+- Отображение HEX и предпросмотр цвета.
 
-### Run locally
+### Запуск локально
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
+Откройте адрес из лога (обычно `http://localhost:8501`).
 
-### Build Windows EXE
-Option A — run the helper script on Windows:
+### Сборка Windows (EXE)
+Вариант A — с помощью скрипта:
 ```bat
 build_windows.bat
 ```
-This creates `dist/ColorModelsApp.exe`.
+Готовый файл: `dist/ColorModelsApp.exe`.
 
-Option B — manual commands:
+Вариант B — вручную:
 ```bat
 pip install -r requirements.txt
 pip install pyinstaller
 pyinstaller --onefile --windowed --name ColorModelsApp run_app.py
 ```
 
-### Build on macOS (local binary)
-Option A — run the helper script:
+### Сборка на macOS (локальный бинарник)
+Вариант A — скрипт:
 ```bash
 ./build_macos.sh
 ```
-Output: `dist/ColorModelsApp`
+Результат: `dist/ColorModelsApp.app` (двойной клик или `open dist/ColorModelsApp.app`).
 
-Option B — manual commands:
+Вариант B — вручную:
 ```bash
 pip install -r requirements.txt
 pip install pyinstaller
 pyinstaller --onefile --windowed --name ColorModelsApp run_app.py
 ```
-Run the binary by double-clicking `dist/ColorModelsApp` or from terminal.
 
-### Deploy to Streamlit Cloud (optional instead of EXE)
-- Push repo to GitHub
-- On Streamlit Community Cloud, create a new app pointing to `app.py`
-- Add repository secrets if needed (none for this app)
-- Share the public URL
+### Деплой в веб (по желанию вместо EXE)
+- Streamlit Community Cloud:
+  - Подключите репозиторий, укажите `app.py`.
+  - Python 3.11 (в проекте есть `runtime.txt`).
+  - Нажмите Deploy — получите публичный URL.
+- Либо Hugging Face Spaces (шаблон Streamlit).
 
-### Submission
-Provide:
-- Windows executable at `dist/ColorModelsApp.exe` OR a public deployment URL
-- GitHub repository link (with all sources)
-- Any additional docs/screenshots. See `docs/SubmissionChecklist.md`.
+### Что сдавать
+- Либо Windows‑исполняемый файл `dist/ColorModelsApp.exe`, либо публичный URL веб‑приложения.
+- Ссылка на репозиторий GitHub с исходниками (включая `app.py`, `color_models.py`, `requirements.txt`, `run_app.py`, скрипты сборки, документацию).
+- Краткая документация/скриншоты (у нас: `docs/Документация.md`).
 
-### Notes
-- XYZ conversions use sRGB primaries and D65 white with IEC 61966-2-1 companding.
-- CMYK is device-independent approximation: K = 1 − max(R,G,B); C/M/Y normalized over (1−K), then scaled to 0–100%.
-- R,G,B are 0..255; X,Y,Z use Yn=100 with D65; C,M,Y,K are in %.
+### Примечания
+- XYZ использует sRGB‑матрицы и белую точку D65, нормировку к Yn=100.
+- CMYK — девайс‑независимая учебная аппроксимация: K = 1 − max(R,G,B); C/M/Y нормируются по (1−K), выводятся в процентах 0–100.
+- Диапазоны: RGB 0..255; XYZ около 0..100 (Yn=100); CMYK 0..100%.
