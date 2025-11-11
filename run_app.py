@@ -4,7 +4,7 @@ import os
 
 if __name__ == "__main__":
 	app_path = os.path.join(os.path.dirname(__file__), "app.py")
-	# Launch Streamlit as if from command line; windowed app for end users
+	# Запуск Streamlit как из командной строки; окно браузера для пользователя
 	sys.argv = [
 		"streamlit",
 		"run",

@@ -20,7 +20,7 @@ def header():
 	)
 
 
-# Initialize base color state
+# Инициализация базового состояния цвета
 if "color_rgb" not in st.session_state:
 	st.session_state.color_rgb = (255, 0, 0)
 	X, Y, Z, _ = rgb_to_xyz(*st.session_state.color_rgb)
@@ -29,7 +29,7 @@ if "color_rgb" not in st.session_state:
 	st.session_state.color_cmyk = (C, M, Yc, K)
 
 
-# Helpers to keep widget values in sync with the current model
+# Вспомогательные функции для синхронизации значений виджетов с текущими моделями
 
 def _set_rgb_widget_values(r: int, g: int, b: int):
 	st.session_state["rgb_r"] = int(r)
@@ -61,7 +61,7 @@ def _set_cmyk_widget_values(C: float, M: float, Yc: float, K: float):
 	st.session_state["cmyk_k_s"] = float(K)
 
 
-# Ensure widget state exists on first render
+# Обеспечиваем наличие исходных значений для всех виджетов при первом рендере
 r0, g0, b0 = st.session_state.color_rgb
 x0, y0, z0 = st.session_state.color_xyz
 c0, m0, yk0, k0 = st.session_state.color_cmyk
@@ -78,7 +78,7 @@ for key, val in (
 		st.session_state[key] = val
 
 
-# Core update functions that also sync widget state
+# Функции обновления модели с синхронизацией виджетов
 
 def update_from_rgb(r: int, g: int, b: int):
 	st.session_state.color_rgb = (int(r), int(g), int(b))
@@ -113,7 +113,7 @@ def update_from_cmyk(C: float, M: float, Yc: float, K: float):
 	update_from_rgb(r, g, b)
 
 
-# Generic pair-sync callback
+# Общий колбэк синхронизации пары «число ↔ слайдер» и пересчёт моделей
 
 def _on_pair_change(prefix: str, comp: str, is_slider: bool):
 	if is_slider:

@@ -1,20 +1,20 @@
 """
-High-accuracy color space conversions for RGB ↔ XYZ ↔ CMYK using sRGB primaries,
-D65 white point and standard IEC 61966-2-1 transfer functions.
+Высокоточные преобразования цветовых пространств RGB ↔ XYZ ↔ CMYK для sRGB
+с белой точкой D65 и стандартными передаточными функциями IEC 61966-2-1.
 
-All channel orders are:
-- RGB: 0..255 integers in UI, 0..1 floats in conversion
-- XYZ: referenced to D65 white with Yn = 100.0 (Xn=95.047, Yn=100.0, Zn=108.883)
-- CMYK: 0..100 percent in UI, 0..1 floats in conversion
+Принятые соглашения по диапазонам каналов:
+- RGB: целые значения 0..255 в интерфейсе, 0..1 (float) во внутренних расчётах
+- XYZ: относительно D65 с Yn = 100.0 (Xn=95.047, Yn=100.0, Zn=108.883)
+- CMYK: проценты 0..100 в интерфейсе, 0..1 (float) во внутренних расчётах
 
-The module also reports clipping when converting out of gamut.
+Модуль также сообщает о клиппинге при выходе за гамму.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Tuple, Dict
 
-# D65 white point (2°) with Yn=100
+# Белая точка D65 (2°) с Yn=100
 D65_XN = 95.047
 D65_YN = 100.0
 D65_ZN = 108.883
@@ -22,9 +22,9 @@ D65_ZN = 108.883
 
 @dataclass
 class ClipReport:
-	"""Stores which channels were clipped and to what values."""
+	"""Сведения о клиппинге: какие каналы обрезаны и до каких значений."""
 	clipped: bool
-	details: Dict[str, Tuple[float, float]]  # name -> (original, clipped)
+	details: Dict[str, Tuple[float, float]]  # имя -> (исходное, обрезанное)
 
 	@staticmethod
 	def empty() -> "ClipReport":
@@ -39,14 +39,14 @@ class ClipReport:
 
 
 def _srgb_compand_forward(c: float) -> float:
-	"""Linear RGB (0..1) -> sRGB companded (0..1)."""
+	"""Линейный RGB (0..1) → sRGB (0..1)."""
 	if c <= 0.0031308:
 		return 12.92 * c
 	return 1.055 * (c ** (1 / 2.4)) - 0.055
 
 
 def _srgb_compand_inverse(c: float) -> float:
-	"""sRGB companded (0..1) -> linear RGB (0..1)."""
+	"""sRGB (0..1) → линейный RGB (0..1)."""
 	if c <= 0.04045:
 		return c / 12.92
 	return ((c + 0.055) / 1.055) ** 2.4
@@ -68,14 +68,15 @@ def rgb1_to_rgb8(r: float, g: float, b: float) -> Tuple[int, int, int]:
 	return int(round(max(0.0, min(1.0, r)) * 255)), int(round(max(0.0, min(1.0, g)) * 255)), int(round(max(0.0, min(1.0, b)) * 255))
 
 
-# sRGB to XYZ matrix, from IEC 61966-2-1:1999 / Wikipedia (assuming D65)
-# Uses linear RGB (not gamma encoded)
+# Матрица sRGB→XYZ (IEC 61966-2-1:1999 / Wikipedia, белая точка D65)
+# Работает с линейным RGB (без гаммы)
 M_RGB_TO_XYZ = (
 	(0.4124564, 0.3575761, 0.1804375),
 	(0.2126729, 0.7151522, 0.0721750),
 	(0.0193339, 0.1191920, 0.9503041),
 )
 
+# Обратная матрица XYZ→sRGB (сначала линейный RGB, затем компандирование)
 M_XYZ_TO_RGB = (
 	(3.2404542, -1.5371385, -0.4985314),
 	(-0.9692660, 1.8760108, 0.0415560),
@@ -84,10 +85,7 @@ M_XYZ_TO_RGB = (
 
 
 def rgb_to_xyz(r8: int, g8: int, b8: int) -> Tuple[float, float, float, ClipReport]:
-	"""Convert 8-bit sRGB to XYZ (D65) with Yn=100. Returns (X, Y, Z, clip).
-
-	The returned XYZ values are scaled such that Y of white equals 100.
-	"""
+	"""8‑битный sRGB → XYZ (D65) с Yn=100. Возвращает (X, Y, Z, clip)."""
 	r, g, b = rgb8_to_rgb1(r8, g8, b8)
 	r_lin = _srgb_compand_inverse(r)
 	g_lin = _srgb_compand_inverse(g)
@@ -101,8 +99,8 @@ def rgb_to_xyz(r8: int, g8: int, b8: int) -> Tuple[float, float, float, ClipRepo
 
 
 def xyz_to_rgb(X: float, Y: float, Z: float) -> Tuple[int, int, int, ClipReport]:
-	"""Convert XYZ (D65, Yn=100) to 8-bit sRGB. Returns (R,G,B,clip)."""
-	# Normalize to 0..1 domain for matrix multiply
+	"""XYZ (D65, Yn=100) → 8‑битный sRGB. Возвращает (R,G,B,clip)."""
+	# Нормировка в 0..1 для матричного умножения
 	x = X / 100.0
 	y = Y / 100.0
 	z = Z / 100.0
@@ -135,7 +133,7 @@ def _rename_clip(rep: ClipReport, prefix: str) -> ClipReport:
 
 
 def rgb_to_cmyk(r8: int, g8: int, b8: int) -> Tuple[float, float, float, float]:
-	"""sRGB 8-bit -> CMYK (device-independent approx), returns percentages (0..100)."""
+	"""8‑битный sRGB → CMYK (аппроксимация). Возвращает проценты (0..100)."""
 	r = r8 / 255.0
 	g = g8 / 255.0
 	b = b8 / 255.0
@@ -150,7 +148,7 @@ def rgb_to_cmyk(r8: int, g8: int, b8: int) -> Tuple[float, float, float, float]:
 
 
 def cmyk_to_rgb(Cp: float, Mp: float, Yp: float, Kp: float) -> Tuple[int, int, int]:
-	"""CMYK percentages (0..100) -> sRGB 8-bit."""
+	"""CMYK в процентах (0..100) → 8‑битный sRGB."""
 	C = max(0.0, min(100.0, Cp)) / 100.0
 	M = max(0.0, min(100.0, Mp)) / 100.0
 	Y = max(0.0, min(100.0, Yp)) / 100.0
@@ -164,7 +162,7 @@ def cmyk_to_rgb(Cp: float, Mp: float, Yp: float, Kp: float) -> Tuple[int, int, i
 
 
 def constrain_xyz(X: float, Y: float, Z: float) -> Tuple[float, float, float]:
-	# XYZ can be non-negative; practical ranges depend on illuminant. We constrain softly for UI.
+	# XYZ неотрицательны; практические диапазоны зависят от освещения. Для UI мягко ограничиваем снизу.
 	return max(0.0, X), max(0.0, Y), max(0.0, Z)
 
 
@@ -177,7 +175,7 @@ def from_hex(hex_str: str) -> Tuple[int, int, int]:
 	if len(s) == 3:
 		s = ''.join([ch * 2 for ch in s])
 	if len(s) != 6:
-		raise ValueError("Invalid hex color")
+		raise ValueError("Некорректный HEX-цвет")
 	r = int(s[0:2], 16)
 	g = int(s[2:4], 16)
 	b = int(s[4:6], 16)
